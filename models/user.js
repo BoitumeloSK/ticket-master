@@ -13,19 +13,9 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  address: {
-    line1: {
-      type: String,
-      required: true,
-    },
-    line2: {
-      type: String,
-      required: true,
-    },
-    line3: {
-      type: String,
-      required: true,
-    },
+  role: {
+    type: String,
+    default: "user",
   },
 });
 
