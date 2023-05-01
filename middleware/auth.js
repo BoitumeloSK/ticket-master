@@ -20,7 +20,7 @@ const auth = (req, res, next) => {
 const admin = (req, res, next) => {
   const token = req.header("x-auth-token");
 
-  if (!auth && !token) {
+  if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
   const { role } = JWT.verify(token, process.env.SECRET);
@@ -35,7 +35,7 @@ const admin = (req, res, next) => {
 const user = (req, res, next) => {
   const token = req.header("x-auth-token");
 
-  if (!auth && !token) {
+  if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
   const { role } = JWT.verify(token, process.env.SECRET);
@@ -50,7 +50,7 @@ const user = (req, res, next) => {
 const organiser = (req, res, next) => {
   const token = req.header("x-auth-token");
 
-  if (!auth && !token) {
+  if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
   const { role } = JWT.verify(token, process.env.SECRET);
