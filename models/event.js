@@ -14,22 +14,27 @@ const eventSchema = new Schema({
     type: String,
     required: true,
   },
-  eventDate: String,
-  location: String,
-  totalTickets: Number,
+  eventDate: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  totalTickets: {
+    type: Number,
+    required: true,
+  },
   ticketPrice: {
     type: Number,
-    get: (v) => (v / 100).toFixed(2),
-    set: (v) => v * 100,
+    set: (v) => (v / 100).toFixed(2),
   },
   published: {
     type: Boolean,
     required: true,
   },
-  ticketSales: {
-    type: Boolean,
-    required: true,
-  },
+  ticketSales: Boolean,
 });
 
 const Event = model("Event", eventSchema);
