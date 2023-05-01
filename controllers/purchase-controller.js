@@ -50,37 +50,6 @@ function createPurchase(req, res) {
   });
 }
 
-// function updatePurchase(req, res) {
-//   const { id } = req.params;
-//   const { tickets } = req.body;
-//   Purchase.findById(id).then((data) => {
-//     if (data.length == 0) {
-//       return res.status(400).json({
-//         success: false,
-//         error: `Purchase with id ${id} does not exist`,
-//       });
-//     }
-
-//     let ticketDiff = data.tickets - tickets;
-
-//     Event.findById(data.EventId).then((data) => {
-//       let updateTickets = data.totalTickets + ticketDiff;
-
-//       Event.findByIdAndUpdate(data.EventId, {
-//         $set: { totalTickets: updateTickets },
-//       }).then((data) => {
-//         Purchase.findByIdAndUpdate(id, tickets)
-//           .then((data) => {
-//             return res.status(200).json({ success: true, data });
-//           })
-//           .catch((error) => {
-//             return res.status(400).json({ success: false, error });
-//           });
-//       });
-//     });
-//   });
-// }
-
 function userCancelPurchase(req, res) {
   const { id } = req.params;
   Purchase.findById(id).then((data) => {
