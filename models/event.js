@@ -30,7 +30,7 @@ const eventSchema = new Schema({
     type: Number,
     set: (v) => (v / 100).toFixed(2),
   },
-  published: {
+  posted: {
     type: Boolean,
     required: true,
   },

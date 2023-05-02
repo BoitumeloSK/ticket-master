@@ -1,5 +1,8 @@
 const {
   getAllEvents,
+  getEvents,
+  getPostedEvents,
+  getUpcomingEvents,
   createEvent,
   organiserUpdateEvent,
   adminUpdateEvent,
@@ -7,10 +10,13 @@ const {
   adminDeleteEvent,
 } = require("../controllers/event-controller");
 const router = require("express").Router();
-const { auth, admin, organiser } = require("../middleware/auth");
+const { admin, organiser } = require("../middleware/auth");
 
 router.get("/", getAllEvents);
-router.post("/", auth, createEvent);
+router.get("/:UserId", organiser, getEvents);
+router.get("/posted", getPostedEvents);
+router.get("/upcoming", getUpcomingEvents);
+router.post("/", organiser, createEvent);
 router.put("/organiser/edit/:eventId", organiser, organiserUpdateEvent);
 router.put("/admin/edit/:eventId", admin, adminUpdateEvent);
 router.delete("/organiser/delete/:eventId", organiser, organiserDeleteEvent);

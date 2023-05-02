@@ -16,8 +16,7 @@ const purchaseSchema = new Schema({
   },
   totalCost: {
     type: Number,
-    get: (v) => (v / 100).toFixed(2),
-    set: (v) => v * 100,
+    set: (v) => (v / 100).toFixed(2),
   },
 });
 

@@ -13,6 +13,28 @@ function getAllPurchases(req, res) {
     });
 }
 
+function getPurchases(req, res) {
+  const { UserId } = req.params;
+  Purchase.find({ UserId }).then((data) => {
+    if (data.length == 0) {
+      return res.status(400).json({
+        success: false,
+        error: `No purchases found for user.`,
+      });
+    }
+    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+
+    if (UserId != id) {
+      return res.status(400).json({
+        success: false,
+        error: `Not authorised to view user purchases`,
+      });
+    }
+
+    return res.status(200).json({ success: true, data: data });
+  });
+}
+
 function createPurchase(req, res) {
   const { EventId, tickets } = req.body;
 
@@ -30,6 +52,13 @@ function createPurchase(req, res) {
       return res.status(400).json({
         success: false,
         error: "You cannot purchase tickets as the event poster",
+      });
+    }
+
+    if (data.posted == false || data.ticketSales == false) {
+      return res.status(200).json({
+        success: false,
+        error: `Tickets not up for sale yet for this event`,
       });
     }
 
@@ -117,6 +146,7 @@ function adminCancelPurchase(req, res) {
 
 module.exports = {
   getAllPurchases,
+  getPurchases,
   createPurchase,
   userCancelPurchase,
   adminCancelPurchase,

@@ -3,14 +3,14 @@ const {
   createPurchase,
   userCancelPurchase,
   adminCancelPurchase,
-  //   updatePurchase,
+  getPurchases,
 } = require("../controllers/purchase-controller");
 const router = require("express").Router();
 const { auth, admin } = require("../middleware/auth");
 
-router.get("/", getAllPurchases);
+router.get("/", admin, getAllPurchases);
+router.get("/:UserId", auth, getPurchases);
 router.post("/", auth, createPurchase);
-//router.put("/:id", admin, updatePurchase);
 router.delete("/user/delete/:id", auth, userCancelPurchase);
 router.delete("/admin/delete/:id", admin, adminCancelPurchase);
 

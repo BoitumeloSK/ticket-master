@@ -12,6 +12,56 @@ function getAllEvents(req, res) {
     });
 }
 
+function getEvents(req, res) {
+  const { UserId } = req.params;
+  Event.find({ UserId }).then((data) => {
+    if (data.length == 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: `No events found for user.` });
+    }
+    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+
+    if (UserId != id) {
+      return res
+        .status(400)
+        .json({ success: false, error: `Not authorised to view user events` });
+    }
+
+    return res.status(200).json({ success: true, data: data });
+  });
+}
+
+function getPostedEvents(req, res) {
+  Event.find({ posted: true })
+    .then((data) => {
+      if (data.length == 0) {
+        return res
+          .status(400)
+          .json({ success: false, error: `No posted events found` });
+      }
+      return res.status(200).json({ success: true, data: data });
+    })
+    .catch((error) => {
+      return res.status(400).json({ success: false, error: error });
+    });
+}
+
+function getUpcomingEvents(req, res) {
+  Event.find({ ticketSales: false })
+    .then((data) => {
+      if (data.length == 0) {
+        return res
+          .status(400)
+          .json({ success: false, error: `No upcoming events found` });
+      }
+      return res.status(200).json({ success: true, data: data });
+    })
+    .catch((error) => {
+      return res.status(400).json({ success: false, error: error });
+    });
+}
+
 function createEvent(req, res) {
   const {
     name,
@@ -20,7 +70,7 @@ function createEvent(req, res) {
     location,
     totalTickets,
     ticketPrice,
-    published,
+    posted,
   } = req.body;
   const token = req.header("x-auth-token");
   const { id } = JWT.verify(token, process.env.SECRET);
@@ -45,7 +95,7 @@ function createEvent(req, res) {
       location,
       totalTickets,
       ticketPrice,
-      published,
+      posted,
       ticketSales,
     })
       .then((data) => {
@@ -59,7 +109,7 @@ function createEvent(req, res) {
 
 function organiserUpdateEvent(req, res) {
   const { eventId } = req.params;
-  const { name, description, eventDate, location, totalTickets, published } =
+  const { name, description, eventDate, location, totalTickets, posted } =
     req.body;
   const updates = {};
 
@@ -95,8 +145,8 @@ function organiserUpdateEvent(req, res) {
       if (totalTickets) {
         updates["totalTickets"] = totalTickets;
       }
-      if (published) {
-        updates["published"] = published;
+      if (posted) {
+        updates["posted"] = posted;
       }
 
       let ticketSales = data.ticketSales;
@@ -121,7 +171,7 @@ function organiserUpdateEvent(req, res) {
 
 function adminUpdateEvent(req, res) {
   const { eventId } = req.params;
-  const { name, description, eventDate, location, totalTickets, published } =
+  const { name, description, eventDate, location, totalTickets, posted } =
     req.body;
   const updates = {};
 
@@ -147,8 +197,8 @@ function adminUpdateEvent(req, res) {
       if (totalTickets) {
         updates["totalTickets"] = totalTickets;
       }
-      if (published) {
-        updates["published"] = published;
+      if (posted) {
+        updates["posted"] = posted;
       }
 
       let ticketSales = data.ticketSales;
@@ -222,6 +272,9 @@ function adminDeleteEvent(req, res) {
 
 module.exports = {
   getAllEvents,
+  getEvents,
+  getPostedEvents,
+  getUpcomingEvents,
   createEvent,
   organiserUpdateEvent,
   adminUpdateEvent,

@@ -14,6 +14,23 @@ function getAllUsers(req, res) {
     });
 }
 
+function getUser(req, res) {
+  const { id } = req.params;
+  User.findById(id)
+    .then((data) => {
+      if (data.length == 0) {
+        return res.status(400).json({
+          success: false,
+          error: `User with id ${id} does not exist.`,
+        });
+      }
+      return res.status(200).json({ success: true, data: data });
+    })
+    .catch((error) => {
+      return res.status(400).json({ success: false, error: error });
+    });
+}
+
 function signup(req, res) {
   const { name, email, password } = req.body;
   const errors = validationResult(req);
@@ -121,7 +138,7 @@ function updateUserRole(req, res) {
   });
 }
 
-function deleteUser(req, res) {
+function adminDeleteUser(req, res) {
   const { id } = req.params;
   User.findById(id).then((data) => {
     if (data.length == 0) {
@@ -139,11 +156,40 @@ function deleteUser(req, res) {
   });
 }
 
+function deleteUser(req, res) {
+  const { userId } = req.params;
+  User.findById(userId).then((data) => {
+    if (data.length == 0) {
+      return res.status(400).json({
+        success: false,
+        error: `User with id ${userId} does not exist.`,
+      });
+    }
+    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+
+    if (userId != id) {
+      return res
+        .status(400)
+        .json({ success: false, error: `Not authorised to delete user.` });
+    }
+
+    User.findByIdAndDelete(userId)
+      .then((data) => {
+        return res.status(200).json({ success: true, data: data });
+      })
+      .catch((error) => {
+        return res.status(400).json({ success: false, error: error });
+      });
+  });
+}
+
 module.exports = {
   getAllUsers,
+  getUser,
   signup,
   login,
   updateUserPassword,
   updateUserRole,
+  adminDeleteUser,
   deleteUser,
 };
