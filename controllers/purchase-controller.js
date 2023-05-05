@@ -14,17 +14,20 @@ function getAllPurchases(req, res) {
 }
 
 function getPurchases(req, res) {
-  const { UserId } = req.params;
-  Purchase.find({ UserId }).then((data) => {
+  const { id } = req.params;
+  Purchase.find({ id }).then((data) => {
     if (data.length == 0) {
       return res.status(400).json({
         success: false,
         error: `No purchases found for user.`,
       });
     }
-    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+    const { userId } = JWT.verify(
+      req.header("x-auth-token"),
+      process.env.SECRET
+    );
 
-    if (UserId != id) {
+    if (userId != id) {
       return res.status(400).json({
         success: false,
         error: `Not authorised to view user purchases`,
@@ -46,9 +49,9 @@ function createPurchase(req, res) {
       });
     }
     const token = req.header("x-auth-token");
-    const { id } = JWT.verify(token, process.env.SECRET);
+    const { userId } = JWT.verify(token, process.env.SECRET);
 
-    if (data.UserId == id) {
+    if (data.UserId == userId) {
       return res.status(400).json({
         success: false,
         error: "You cannot purchase tickets as the event poster",
@@ -79,8 +82,9 @@ function createPurchase(req, res) {
   });
 }
 
-function userCancelPurchase(req, res) {
+function cancelPurchase(req, res) {
   const { id } = req.params;
+  let deletePurchase = false;
   Purchase.findById(id).then((data) => {
     if (data.length == 0) {
       return res.status(400).json({
@@ -88,40 +92,23 @@ function userCancelPurchase(req, res) {
         error: `Purchase with id ${id} does not exist`,
       });
     }
-    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+    const { userId, role } = JWT.verify(
+      req.header("x-auth-token"),
+      process.env.SECRET
+    );
 
-    if (data.UserId != id) {
+    if (data.UserId == userId) {
+      deletePurchase = true;
+    } else {
+      if (role == "admin") {
+        deletePurchase = true;
+      }
+    }
+
+    if (!deletePurchase) {
       return res.status(400).json({
         success: false,
         error: "User not authorised to delete purchase",
-      });
-    }
-    let returnedTickets = data.tickets;
-
-    Event.findById(data.EventId).then((data) => {
-      let updateTickets = data.totalTickets + returnedTickets;
-      Event.findByIdAndUpdate(data._id, {
-        $set: { totalTickets: updateTickets },
-      }).then((data) => {
-        Purchase.findByIdAndDelete(id)
-          .then((data) => {
-            return res.status(200).json({ success: true, data: data });
-          })
-          .catch((error) => {
-            return res.status(400).json({ success: false, error: error });
-          });
-      });
-    });
-  });
-}
-
-function adminCancelPurchase(req, res) {
-  const { id } = req.params;
-  Purchase.findById(id).then((data) => {
-    if (data.length == 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Purchase with id ${id} does not exist`,
       });
     }
 
@@ -148,6 +135,5 @@ module.exports = {
   getAllPurchases,
   getPurchases,
   createPurchase,
-  userCancelPurchase,
-  adminCancelPurchase,
+  cancelPurchase,
 };

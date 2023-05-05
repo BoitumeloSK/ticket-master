@@ -1,17 +1,15 @@
 const {
   getAllPurchases,
   createPurchase,
-  userCancelPurchase,
-  adminCancelPurchase,
+  cancelPurchase,
   getPurchases,
 } = require("../controllers/purchase-controller");
 const router = require("express").Router();
 const { auth, admin } = require("../middleware/auth");
 
 router.get("/", admin, getAllPurchases);
-router.get("/:UserId", auth, getPurchases);
+router.get("/:id", auth, getPurchases);
 router.post("/", auth, createPurchase);
-router.delete("/user/delete/:id", auth, userCancelPurchase);
-router.delete("/admin/delete/:id", admin, adminCancelPurchase);
+router.delete("/:id", auth, cancelPurchase);
 
 module.exports = router;

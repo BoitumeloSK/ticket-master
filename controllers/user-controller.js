@@ -44,10 +44,10 @@ function signup(req, res) {
         .json({ success: false, error: "Email not available" });
     } else {
       const hash = await bcrypt.hash(password, 10);
-      const token = JWT.sign({ email, hash }, process.env.SECRET);
+
       User.create({ name, email, password: hash })
         .then((data) => {
-          return res.status(200).json({ success: true, data: data, token });
+          return res.status(200).json({ success: true, data: data });
         })
         .catch((error) => {
           return res.status(400).json({ success: false, error: error });
@@ -72,7 +72,7 @@ function login(req, res) {
           .json({ success: false, error: "Invalid login credentials" });
       }
       const token = JWT.sign(
-        { id: data[0]._id, role: data[0].role },
+        { userId: data[0]._id, role: data[0].role },
         process.env.SECRET,
         {
           expiresIn: "7d",
@@ -86,21 +86,20 @@ function login(req, res) {
 }
 
 function updateUserPassword(req, res) {
-  const { userId } = req.params;
+  const { id } = req.params;
   const { password } = req.body;
-  User.findById(userId).then(async (data) => {
+  User.findById(id).then(async (data) => {
     if (data.length == 0) {
       return res.status(400).json({
         success: false,
-        error: `User with id ${userId} does not exist`,
+        error: `User with id ${id} does not exist`,
       });
     }
     const token = req.header("x-auth-token");
 
-    const { id } = JWT.verify(token, process.env.SECRET);
-    console.log(id);
+    const { userId } = JWT.verify(token, process.env.SECRET);
 
-    if (userId != id) {
+    if (id != userId) {
       return res.status(400).json({
         success: false,
         error: "Not authorised to change user password",
@@ -108,7 +107,7 @@ function updateUserPassword(req, res) {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    User.findByIdAndUpdate(userId, { $set: { password: hash } })
+    User.findByIdAndUpdate(id, { $set: { password: hash } })
       .then((data) => {
         return res.status(200).json({ success: true, data: data });
       })
@@ -138,42 +137,36 @@ function updateUserRole(req, res) {
   });
 }
 
-function adminDeleteUser(req, res) {
-  const { id } = req.params;
-  User.findById(id).then((data) => {
-    if (data.length == 0) {
-      return res
-        .status(400)
-        .json({ success: false, error: `User with id ${id} does not exist.` });
-    }
-    User.findByIdAndDelete(id)
-      .then((data) => {
-        return res.status(200).json({ success: true, data: data });
-      })
-      .catch((error) => {
-        return res.status(400).json({ success: false, error: error });
-      });
-  });
-}
-
 function deleteUser(req, res) {
-  const { userId } = req.params;
-  User.findById(userId).then((data) => {
+  const { id } = req.params;
+  let removeUser = false;
+  User.findById(id).then((data) => {
     if (data.length == 0) {
       return res.status(400).json({
         success: false,
-        error: `User with id ${userId} does not exist.`,
+        error: `User with id ${id} does not exist.`,
       });
     }
-    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+    const { userId, role } = JWT.verify(
+      req.header("x-auth-token"),
+      process.env.SECRET
+    );
 
-    if (userId != id) {
+    if (role == "admin") {
+      removeUser = true;
+    } else {
+      if (id == userId) {
+        removeUser = true;
+      }
+    }
+
+    if (!removeUser) {
       return res
         .status(400)
         .json({ success: false, error: `Not authorised to delete user.` });
     }
 
-    User.findByIdAndDelete(userId)
+    User.findByIdAndDelete(id)
       .then((data) => {
         return res.status(200).json({ success: true, data: data });
       })
@@ -190,6 +183,5 @@ module.exports = {
   login,
   updateUserPassword,
   updateUserRole,
-  adminDeleteUser,
   deleteUser,
 };

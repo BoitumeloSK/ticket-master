@@ -13,16 +13,19 @@ function getAllEvents(req, res) {
 }
 
 function getEvents(req, res) {
-  const { UserId } = req.params;
-  Event.find({ UserId }).then((data) => {
+  const { id } = req.params;
+  Event.find({ id }).then((data) => {
     if (data.length == 0) {
       return res
         .status(400)
         .json({ success: false, error: `No events found for user.` });
     }
-    const { id } = JWT.verify(req.header("x-auth-token"), process.env.SECRET);
+    const { userId } = JWT.verify(
+      req.header("x-auth-token"),
+      process.env.SECRET
+    );
 
-    if (UserId != id) {
+    if (id != userId) {
       return res
         .status(400)
         .json({ success: false, error: `Not authorised to view user events` });
@@ -73,7 +76,7 @@ function createEvent(req, res) {
     posted,
   } = req.body;
   const token = req.header("x-auth-token");
-  const { id } = JWT.verify(token, process.env.SECRET);
+  const { userId } = JWT.verify(token, process.env.SECRET);
   let ticketSales = false;
 
   Event.find({ name, eventDate, location }).then((data) => {
@@ -88,7 +91,7 @@ function createEvent(req, res) {
       : (ticketSales = true);
 
     Event.create({
-      UserId: id,
+      UserId: userId,
       name,
       description,
       eventDate,
@@ -107,23 +110,32 @@ function createEvent(req, res) {
   });
 }
 
-function organiserUpdateEvent(req, res) {
-  const { eventId } = req.params;
+function updateEvent(req, res) {
+  const { id } = req.params;
   const { name, description, eventDate, location, totalTickets, posted } =
     req.body;
   const updates = {};
+  let canupdateEvent = false;
 
-  Event.findById(eventId).then((data) => {
+  Event.findById(id).then((data) => {
     if (data.length == 0) {
       return res.status(400).json({
         success: false,
-        error: `Event with id ${eventId} does not exist.`,
+        error: `Event with id ${id} does not exist.`,
       });
     } else {
       const token = req.header("x-auth-token");
-      const { id } = JWT.verify(token, process.env.SECRET);
+      const { userId, role } = JWT.verify(token, process.env.SECRET);
 
-      if (data.UserId != id) {
+      if (data.UserId == userId) {
+        canupdateEvent = true;
+      } else {
+        if (role == "admin") {
+          canupdateEvent = true;
+        }
+      }
+
+      if (!canupdateEvent) {
         return res.status(400).json({
           success: false,
           error: "User not authorised to make changes to event",
@@ -158,7 +170,7 @@ function organiserUpdateEvent(req, res) {
       }
       updates["ticketSales"] = ticketSales;
 
-      Event.findByIdAndUpdate(eventId, { $set: updates })
+      Event.findByIdAndUpdate(id, { $set: updates })
         .then((data) => {
           return res.status(200).json({ success: true, data: data });
         })
@@ -169,98 +181,35 @@ function organiserUpdateEvent(req, res) {
   });
 }
 
-function adminUpdateEvent(req, res) {
-  const { eventId } = req.params;
-  const { name, description, eventDate, location, totalTickets, posted } =
-    req.body;
-  const updates = {};
-
-  Event.findById(eventId).then((data) => {
+function deleteEvent(req, res) {
+  const { id } = req.params;
+  let removeEvent = false;
+  Event.findById(id).then((data) => {
     if (data.length == 0) {
       return res.status(400).json({
         success: false,
-        error: `Event with id ${eventId} does not exist.`,
-      });
-    } else {
-      if (name) {
-        updates["name"] = name;
-      }
-      if (description) {
-        updates["description"] = description;
-      }
-      if (eventDate) {
-        updates["eventDate"] = eventDate;
-      }
-      if (location) {
-        updates["location"] = location;
-      }
-      if (totalTickets) {
-        updates["totalTickets"] = totalTickets;
-      }
-      if (posted) {
-        updates["posted"] = posted;
-      }
-
-      let ticketSales = data.ticketSales;
-
-      if (Object.keys(updates).includes("location" || "eventDate")) {
-        updates["location"] == "TBA" || updates["eventDate"] == "TBA"
-          ? (ticketSales = false)
-          : (ticketSales = true);
-      }
-      updates["ticketSales"] = ticketSales;
-
-      Event.findByIdAndUpdate(eventId, { $set: updates })
-        .then((data) => {
-          return res.status(200).json({ success: true, data: data });
-        })
-        .catch((error) => {
-          return res.status(400).json({ success: false, error: error });
-        });
-    }
-  });
-}
-
-function organiserDeleteEvent(req, res) {
-  const { eventId } = req.params;
-  Event.findById(eventId).then((data) => {
-    if (data.length == 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Event with id ${eventId} does not exist.`,
+        error: `Event with id ${id} does not exist.`,
       });
     }
     const token = req.header("x-auth-token");
-    const { id } = JWT.verify(token, process.env.SECRET);
+    const { userId, role } = JWT.verify(token, process.env.SECRET);
 
-    if (data.UserId != id) {
+    if (data.UserId == userId) {
+      removeEvent = true;
+    } else {
+      if (role == "admin") {
+        removeEvent = true;
+      }
+    }
+
+    if (!removeEvent) {
       return res.status(400).json({
         success: false,
-        error: "User not authorised to make changes to event",
+        error: "User not authorised to delete event",
       });
     }
 
-    Event.findByIdAndUpdate(eventId)
-      .then((data) => {
-        return res.status(200).json({ success: true, data: data });
-      })
-      .catch((error) => {
-        return res.status(400).json({ success: false, error: error });
-      });
-  });
-}
-
-function adminDeleteEvent(req, res) {
-  const { eventId } = req.params;
-  Event.findById(eventId).then((data) => {
-    if (data.length == 0) {
-      return res.status(400).json({
-        success: false,
-        error: `Event with id ${eventId} does not exist.`,
-      });
-    }
-
-    Event.findByIdAndUpdate(eventId)
+    Event.findByIdAndDelete(id)
       .then((data) => {
         return res.status(200).json({ success: true, data: data });
       })
@@ -276,8 +225,6 @@ module.exports = {
   getPostedEvents,
   getUpcomingEvents,
   createEvent,
-  organiserUpdateEvent,
-  adminUpdateEvent,
-  organiserDeleteEvent,
-  adminDeleteEvent,
+  updateEvent,
+  deleteEvent,
 };

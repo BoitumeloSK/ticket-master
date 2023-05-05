@@ -23,12 +23,15 @@ const admin = (req, res, next) => {
   if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
-  const { role } = JWT.verify(token, process.env.SECRET);
 
-  if (auth && role == "admin") {
+  try {
+    const { role } = JWT.verify(token, process.env.SECRET);
+    if (role != "admin") {
+      return res.status(400).json({ success: false, error: "Access Denied" });
+    }
     next();
-  } else {
-    return res.status(400).json({ success: false, error: "Access Denied" });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: "Invalid token" });
   }
 };
 
@@ -38,12 +41,15 @@ const user = (req, res, next) => {
   if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
-  const { role } = JWT.verify(token, process.env.SECRET);
 
-  if (auth && ["admin", "user"].includes(role)) {
+  try {
+    const { role } = JWT.verify(token, process.env.SECRET);
+    if (!["admin", "user"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Access Denied" });
+    }
     next();
-  } else {
-    return res.status(400).json({ success: false, error: "Access Denied" });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: "Invalid token" });
   }
 };
 
@@ -53,12 +59,15 @@ const organiser = (req, res, next) => {
   if (!token) {
     return res.status(400).json({ success: false, error: "Access Denied" });
   }
-  const { role } = JWT.verify(token, process.env.SECRET);
 
-  if (auth && ["admin", "organiser"].includes(role)) {
+  try {
+    const { role } = JWT.verify(token, process.env.SECRET);
+    if (!["admin", "organiser"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Access Denied" });
+    }
     next();
-  } else {
-    return res.status(400).json({ success: false, error: "Access Denied" });
+  } catch (error) {
+    return res.status(400).json({ success: false, error: "Invalid token" });
   }
 };
 

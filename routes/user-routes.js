@@ -5,7 +5,6 @@ const {
   login,
   updateUserPassword,
   updateUserRole,
-  adminDeleteUser,
   deleteUser,
 } = require("../controllers/user-controller");
 const router = require("express").Router();
@@ -16,9 +15,8 @@ router.get("/", admin, getAllUsers);
 router.get("/", admin, getUser);
 router.post("/", validate, signup);
 router.post("/login", login);
-router.put("/password/:userId", user, updateUserPassword);
+router.put("/password/:id", user, updateUserPassword);
 router.put("/role/:id", admin, updateUserRole);
-router.delete("/admin/delete/:id", admin, adminDeleteUser);
-router.delete("/user/delete/:userId", auth, deleteUser);
+router.delete("/:id", auth, deleteUser);
 
 module.exports = router;
